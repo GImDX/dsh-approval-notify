@@ -14,6 +14,11 @@ DeepSeek Harness (DSH) 的 Windows 桌面通知插件:当 Agent 需要你关注�
 | `approval-notify.mjs` | 插件本体(宿主进程侧,零运行时依赖) |
 | `dsh-notify-icon.png` | 通知图标(DSH 徽章,214×120) |
 
+## 许可
+
+[MIT](LICENSE)。图标 `dsh-notify-icon.png` 来源于
+`@deepseek-ai/dsh-skill-badge`(MIT,Copyright (c) 2026 DeepSeek)。
+
 ## 安装
 
 把两个文件复制到 profile 目录,并在 `$DSH_HOME/profiles/web/cordis.patch.yml` 追加登记行:
