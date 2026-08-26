@@ -421,8 +421,20 @@ const TURN_END_TEXT = {
 /**
  * Scan back from a turn/end event to its turn/start: the driving user
  * message's source (walking backwards, the final overwrite is the FIRST
- * message of the turn) and any goal/change operations in the window.
+ * message of the turn), any goal/change operations in the window, and the
+ * LAST assistant reply's first text block (the turn's output).
  */
+function textOfMessage(message) {
+  const blocks = message?.content;
+  if (!Array.isArray(blocks)) return undefined;
+  for (const block of blocks) {
+    if (block?.type === "text" && typeof block.text === "string" && block.text.trim().length > 0) {
+      return block.text.trim();
+    }
+  }
+  return undefined;
+}
+
 function turnWindow(session, turnEnd) {
   const events = session?.events ?? [];
   const turn = turnEnd?.data?.turn;
@@ -432,18 +444,23 @@ function turnWindow(session, turnEnd) {
   }
   let userSource;
   const goalOps = [];
+  let lastAssistantText;
   for (let i = endIndex; i >= 0; i -= 1) {
     const event = events[i];
     if (!event) continue;
     if (event.type === "turn/start" && event.data?.turn === turn) break;
     if (event.type === "user/message" && event.data?.source) userSource = event.data.source;
     if (event.type === "goal/change" && event.data?.operation) goalOps.push(event.data.operation);
+    if (event.type === "assistant/message" && event.data?.turn === turn && lastAssistantText === undefined) {
+      const text = textOfMessage(event.data.message);
+      if (text) lastAssistantText = text;
+    }
   }
-  return { userSource, goalOps };
+  return { userSource, goalOps, lastAssistantText };
 }
 
 export function apply(ctx) {
-  logLine(`mounted rev=23 pid=${process.pid}`);
+  logLine(`mounted rev=24 pid=${process.pid}`);
   ensureIdentity();
   const notifyWithGate = (title, body) => {
     try {
@@ -478,8 +495,13 @@ export function apply(ctx) {
         if (!terminal) return;
       }
       const turn = event.data.turn;
-      const body = Number.isInteger(turn) ? `${TURN_END_TEXT[reason]}(第 ${turn} 轮)` : TURN_END_TEXT[reason];
-      logLine(`turn/end reason=${reason} turn=${String(turn)}`);
+      // The body is the turn's actual output (excerpt); fall back to the
+      // reason text when the turn produced no text output.
+      const output = window.lastAssistantText
+        ? window.lastAssistantText.replace(/\s+/g, " ").slice(0, 150) + (window.lastAssistantText.length > 150 ? "…" : "")
+        : "";
+      const body = output || TURN_END_TEXT[reason];
+      logLine(`turn/end reason=${reason} turn=${String(turn)} output=${output ? "yes" : "no"}`);
       notifyWithGate("DeepSeek Harness · 回合完成", body);
       return;
     }
