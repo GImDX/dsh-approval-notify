@@ -410,8 +410,40 @@ function extractAskQuestion(argumentsJson) {
   }
 }
 
+const TURN_END_TEXT = {
+  completed: "任务已完成",
+  error: "任务出错",
+  "max-tokens": "输出达到 token 上限",
+  aborted: "任务已取消",
+  interrupted: "任务中断",
+};
+
+/**
+ * Scan back from a turn/end event to its turn/start: the driving user
+ * message's source (walking backwards, the final overwrite is the FIRST
+ * message of the turn) and any goal/change operations in the window.
+ */
+function turnWindow(session, turnEnd) {
+  const events = session?.events ?? [];
+  const turn = turnEnd?.data?.turn;
+  let endIndex = events.length - 1;
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    if (events[i]?.seq === turnEnd?.seq) { endIndex = i; break; }
+  }
+  let userSource;
+  const goalOps = [];
+  for (let i = endIndex; i >= 0; i -= 1) {
+    const event = events[i];
+    if (!event) continue;
+    if (event.type === "turn/start" && event.data?.turn === turn) break;
+    if (event.type === "user/message" && event.data?.source) userSource = event.data.source;
+    if (event.type === "goal/change" && event.data?.operation) goalOps.push(event.data.operation);
+  }
+  return { userSource, goalOps };
+}
+
 export function apply(ctx) {
-  logLine(`mounted rev=22 pid=${process.pid}`);
+  logLine(`mounted rev=23 pid=${process.pid}`);
   ensureIdentity();
   const notifyWithGate = (title, body) => {
     try {
@@ -433,6 +465,24 @@ export function apply(ctx) {
     }
   };
   ctx.on("session/event", (session, event) => {
+    if (event.type === "turn/end") {
+      const reason = event.data?.reason?.kind;
+      if (typeof reason !== "string" || !(reason in TURN_END_TEXT)) return;
+      // Subagent turns would flood the user; only the main session notifies.
+      const depth = session?.header?.delegationDepth;
+      if (session?.header?.origin === "subagent" || (typeof depth === "number" && depth > 0)) return;
+      // /goal 自动推进回合默认静默,仅在目标完成/阻塞的最终回合提醒。
+      const window = turnWindow(session, event);
+      if (window.userSource?.kind === "goal" && window.userSource.round > 0) {
+        const terminal = window.goalOps.some((op) => op === "complete" || op === "block");
+        if (!terminal) return;
+      }
+      const turn = event.data.turn;
+      const body = Number.isInteger(turn) ? `${TURN_END_TEXT[reason]}(第 ${turn} 轮)` : TURN_END_TEXT[reason];
+      logLine(`turn/end reason=${reason} turn=${String(turn)}`);
+      notifyWithGate("DeepSeek Harness · 回合完成", body);
+      return;
+    }
     if (event.type === "approval/asked") {
       // Under the deterministic `never` policy nothing is ever shown to a human.
       if (effectivePolicy(session) === "never") return;

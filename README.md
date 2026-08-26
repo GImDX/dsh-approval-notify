@@ -4,6 +4,7 @@ DeepSeek Harness (DSH) 的 Windows 桌面通知插件:当 Agent 需要你关注�
 
 - **审批提醒** 🔐:监听 `approval/asked` 会话事件(沙箱提权等操作等待批准)
 - **提问提醒** ❓:监听 `ask_user_question` 工具调用,提取问题文本作为正文
+- **回合完成提醒** ✅:监听 `turn/end` 事件(完成/出错/超限/取消/中断);子代理回合与 /goal 自动推进回合默认静默(目标完成/阻塞的最终回合除外)
 - **前台静默** 🚫:DSH 页面在前台时整体跳过(用户已能看到页面内的审批/提问 UI),只有页面在后台时才通知
 - **Edge 闪烁**:任务栏图标持续闪烁直到你切回 DSH 页面
 
@@ -72,3 +73,4 @@ DeepSeek Harness (DSH) 的 Windows 桌面通知插件:当 Agent 需要你关注�
 - rev=20:全新 `DshNotify.App` 身份、全称标题、徽章图标(呈现问题根治版)
 - rev=21:DSH 页面在前台时静默跳过
 - rev=22:新增 `ask_user_question` 提问通知
+- rev=23:新增 `turn/end` 回合完成通知(子代理与 goal 自动推进回合静默)
