@@ -20,23 +20,29 @@ DeepSeek Harness (DSH) 的 Windows 桌面通知插件:当 Agent 需要你关注�
 [MIT](LICENSE)。图标 `dsh-notify-icon.png` 来源于
 `@deepseek-ai/dsh-skill-badge`(MIT,Copyright (c) 2026 DeepSeek)。
 
-## 安装
+## 安装(bundle 方式,推荐)
+
+```powershell
+dsh plugin --profile web add file:C:/path/to/dsh-approval-notify
+```
+
+- pnpm 把包复制进 profile 的 `node_modules`,并自动注册 `dsh.profile.bundles` 层;
+- 包自带的 `cordis.patch.yml` 自动挂载入口(无需手动 `- insert:`);
+- **重启 DSH** 后生效;插件列表显示 `dsh-approval-notify`(包身份),请求期插件清单也从本包 manifest 取 name/version;
+- 升级:修改本仓库文件后重新执行上面的 add 命令再重启。
+
+### 手动方式(旧)
 
 把两个文件复制到 profile 目录,并在 `$DSH_HOME/profiles/web/cordis.patch.yml` 追加登记行:
 
 ```yaml
-# System toast on every approval ask; observe-only, never answers the request.
-# The ?rev query forces a fresh module import on live reload.
 - insert:
     - id: approval-notify
       name: ./approval-notify.mjs
 ```
 
 该补丁文件被运行中的 DSH 热监视,保存后立即生效(修改 `?rev` 数值可强制重载模块),无需重启。
-
-> 也可以让补丁行直接引用本仓库文件的绝对路径
-> (`name: C:/path/to/dsh-approval-notify/approval-notify.mjs`,替换为你的实际路径),
-> 实现"改仓库即改线上"的单一来源模式;代价是路径移动后需同步修改补丁行。
+缺点是插件列表会显示 file:// 文件路径。
 
 ## 依赖
 

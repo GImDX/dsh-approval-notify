@@ -1,0 +1,34 @@
+{
+  "name": "dsh-approval-notify",
+  "version": "0.24.0",
+  "description": "DeepSeek Harness (DSH) Windows desktop notification plugin: approval / question / turn-completion toasts with Edge taskbar flash and foreground-aware quiet mode.",
+  "type": "module",
+  "main": "./approval-notify.mjs",
+  "exports": {
+    ".": "./approval-notify.mjs"
+  },
+  "files": [
+    "approval-notify.mjs",
+    "dsh-notify-icon.png",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "notify",
+    "toast",
+    "windows"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

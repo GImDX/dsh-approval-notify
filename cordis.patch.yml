@@ -1,0 +1,10 @@
+# dsh-approval-notify bundle patch.
+# The entry is a bare package specifier: `dsh plugin --profile <name> add
+# file:<this-dir>` installs the package into the profile's node_modules and
+# registers it as a bundle layer; this insert auto-mounts the entry.
+# The plugin list then shows "dsh-approval-notify" (package identity) instead
+# of a raw file:// URL, and the request-time plugin-package inventory resolves
+# name/version from this package's own manifest.
+- insert:
+    - id: approval-notify
+      name: dsh-approval-notify
